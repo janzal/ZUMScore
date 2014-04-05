@@ -94,49 +94,83 @@ class ScoreRepository extends Repository {
         return array(strtotime($dates->min), strtotime($dates->max));
     }
 
-    protected function removeEdges($nodeId, &$fEdges, &$tEdges) {
-        if(isset($fEdges[$nodeId])) {
-            unset($tEdges[$fEdges[$nodeId]]);
-            unset($fEdges[$nodeId]);
-            return;
-        }
+    // protected function removeEdges($nodeId, &$fEdges, &$tEdges) {
+    //     if(isset($fEdges[$nodeId])) {
+    //         unset($tEdges[$fEdges[$nodeId]]);
+    //         unset($fEdges[$nodeId]);
+    //         return;
+    //     }
 
-        if(isset($tEdges[$nodeId])) {
-            unset($fEdges[$tEdges[$nodeId]]);
-            unset($tEdges[$nodeId]);
-        }        
+    //     if(isset($tEdges[$nodeId])) {
+    //         unset($fEdges[$tEdges[$nodeId]]);
+    //         unset($tEdges[$nodeId]);
+    //     }        
+    // }
+
+    protected function checkScore($nsa) {
+        $z = new Zum\Validation\Data2014();
+
+        //echo "uzlu=".count($z->nodes).'<br>';
+        $e = array();
+        foreach ($z->nodes as $key=>$value) {
+            foreach ($value as $edg) {
+                $e[] = $edg;
+            }
+        }
+        //echo "hran=".count($e).' (dupl)<br>';
+        $hrany = array_unique($e);
+        //echo "hran=".count($hrany).' (unique)<br>';
+
+        $x = array(); 
+        foreach ($nsa as $nid) {
+            foreach ($z->nodes[$nid] as $hrana) {
+                $x[] = $hrana;
+            }
+        }
+        $x = array_unique($x);
+        if (count($x) == count($hrany)) {
+                return 0;
+            } else {
+            //     echo "<h1>INVALID</h1>";
+            // echo "pokryto ".count($x)." hran z (".count($hrany).")<br/>";
+            // $zbytek = array_diff($hrany, $x);
+            // echo '<pre>';
+            // print_r($zbytek);
+            // echo '</pre>';
+                return count($hrany)-count($x);
+        }
     }
 
-    protected function checkScore($score) {
-        $offset = 0;
-        $limit = 1000;
+    // protected function checkScore($score) {
+    //     $offset = 0;
+    //     $limit = 1000;
 
-        $edges = $this->connection->table('edge')->limit($limit, $offset);
-        $offset += $limit;
+    //     $edges = $this->connection->table('edge')->limit($limit, $offset);
+    //     $offset += $limit;
 
-        $spare_edges_count = 0;
+    //     $spare_edges_count = 0;
 
-        while(count($edges)) {
-            $edges = $this->connection->table('edge')->limit($limit, $offset);
+    //     while(count($edges)) {
+    //         $edges = $this->connection->table('edge')->limit($limit, $offset);
 
-            $fEdges = array();
-            $tEdges = array();
-            foreach ($edges as $edge) {
-                $fEdges[$edge->from_id] = $edge->to_id;
-                $tEdges[$edge->to_id] = $edge->from_id;
-            }
+    //         $fEdges = array();
+    //         $tEdges = array();
+    //         foreach ($edges as $edge) {
+    //             $fEdges[$edge->from_id] = $edge->to_id;
+    //             $tEdges[$edge->to_id] = $edge->from_id;
+    //         }
 
-            foreach ($score as $node) {
-                $this->removeEdges($node, $fEdges, $tEdges);
-            }
+    //         foreach ($score as $node) {
+    //             $this->removeEdges($node, $fEdges, $tEdges);
+    //         }
 
-            $spare_edges_count += count($fEdges);
+    //         $spare_edges_count += count($fEdges);
 
-            $offset += $limit;
-        }
+    //         $offset += $limit;
+    //     }
 
-        return $spare_edges_count;
-    }
+    //     return $spare_edges_count;
+    // }
 
     public function commitScore($userId, $score) {
         $nodesCount = $this->connection->table('node')->count();
