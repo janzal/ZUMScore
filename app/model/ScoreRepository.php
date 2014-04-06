@@ -106,13 +106,44 @@ class ScoreRepository extends Repository {
     //         unset($tEdges[$nodeId]);
     //     }        
     // }
+	
+	public function getNodes() {
+		$storage = new Nette\Caching\Storages\FileStorage('temp');
+		$cache = new Nette\Caching\Cache($storage, 'nodes');		
+
+		$result = $cache->load('nodes-2014');
+		
+		if($result) return $result;
+		
+		$result = array();
+		
+		$nodes = $this->connection->table('node');	
+		
+		foreach($nodes as $node) {
+            $edges = $this->connection->table('edge')->where('from_id = ? OR to_id = ?', $node['id'], $node['id']);
+			
+			$result[$node['id']] = array();
+			foreach($edges as $edge) {
+				$edge_string = 'e'.min($edge['to_id'], $edge['from_id']).'_'.max($edge['to_id'], $edge['from_id']);
+
+                $result[$node['id']][] = $edge_string;
+			}    
+
+            $result[$node['id']] = array_unique($result[$node['id']]);
+		}
+		
+		$cache->save('nodes-2014', $result);
+		
+		return $result;
+	}
+
 
     protected function checkScore($nsa) {
-        $z = new Zum\Validation\Data2014();
+        $nodes = $this->getNodes();
 
         //echo "uzlu=".count($z->nodes).'<br>';
         $e = array();
-        foreach ($z->nodes as $key=>$value) {
+        foreach ($nodes as $key=>$value) {
             foreach ($value as $edg) {
                 $e[] = $edg;
             }
@@ -123,7 +154,7 @@ class ScoreRepository extends Repository {
 
         $x = array(); 
         foreach ($nsa as $nid) {
-            foreach ($z->nodes[$nid] as $hrana) {
+            foreach ($nodes[$nid] as $hrana) {
                 $x[] = $hrana;
             }
         }

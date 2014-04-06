@@ -1,5 +1,6 @@
 <?php
-// ini_set('memory_limit', '64M');
+// ini_set('memory_limit', '128M');
+ini_set('max_execution_time', 300); //300 seconds = 5 minutes
 
 // Uncomment this line if you must temporarily take down your site for maintenance.
 // require '.maintenance.php';
